@@ -22,6 +22,14 @@ export class FirstDepositContract implements Contract {
         return new FirstDepositContract(contractAddress(workchain, init), init);
     }
 
+    static createForDeploy(code: Cell, initialCounterValue: number): FirstDepositContract {
+        const data = beginCell().storeUint(initialCounterValue, 64).endCell();
+        const workchain = 0; // deploy to workchain 0
+        const address = contractAddress(workchain, { code, data });
+        return new FirstDepositContract(address, { code, data });
+    }
+
+    // function call
     async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
             value: '0.01',
@@ -35,10 +43,14 @@ export class FirstDepositContract implements Contract {
         return stack.readBigNumber();
     }
 
-    static createForDeploy(code: Cell, initialCounterValue: number): FirstDepositContract {
-        const data = beginCell().storeUint(initialCounterValue, 64).endCell();
-        const workchain = 0; // deploy to workchain 0
-        const address = contractAddress(workchain, { code, data });
-        return new FirstDepositContract(address, { code, data });
+    async sendIncrement(provider: ContractProvider, via: Sender) {
+        const messageBody = beginCell()
+            .storeUint(1, 32) // op (op #1 = increment)
+            .storeUint(0, 64) // query id
+            .endCell();
+        await provider.internal(via, {
+            value: '0.002', // send 0.002 TON for gas
+            body: messageBody,
+        });
     }
 }
