@@ -21,9 +21,18 @@ export class FirstDepositContract implements Contract {
 
     async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
-            value,
+            value: "0.01",
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().endCell(),
         });
     }
+
+    static createForDeploy(code: Cell, initialCounterValue: number): FirstDepositContract {
+        const data = beginCell()
+          .storeUint(initialCounterValue, 64)
+          .endCell();
+        const workchain = 0; // deploy to workchain 0
+        const address = contractAddress(workchain, { code, data });
+        return new FirstDepositContract(address, { code, data });
+      }
 }
