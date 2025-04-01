@@ -7,7 +7,10 @@ export function firstDepositContractConfigToCell(config: FirstDepositContractCon
 }
 
 export class FirstDepositContract implements Contract {
-    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
+    constructor(
+        readonly address: Address,
+        readonly init?: { code: Cell; data: Cell },
+    ) {}
 
     static createFromAddress(address: Address) {
         return new FirstDepositContract(address);
@@ -21,18 +24,21 @@ export class FirstDepositContract implements Contract {
 
     async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
-            value: "0.01",
+            value: '0.01',
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().endCell(),
         });
     }
 
+    async getCounter(provider: ContractProvider) {
+        const { stack } = await provider.get('counter', []);
+        return stack.readBigNumber();
+    }
+
     static createForDeploy(code: Cell, initialCounterValue: number): FirstDepositContract {
-        const data = beginCell()
-          .storeUint(initialCounterValue, 64)
-          .endCell();
+        const data = beginCell().storeUint(initialCounterValue, 64).endCell();
         const workchain = 0; // deploy to workchain 0
         const address = contractAddress(workchain, { code, data });
         return new FirstDepositContract(address, { code, data });
-      }
+    }
 }
